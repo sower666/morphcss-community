@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security policy
+    url: https://github.com/sower666/morphcss-community/security/policy
+    about: Report suspected vulnerabilities privately according to the security policy.
+  - name: MorphCSS Community
+    url: https://morphcss.site/community/
+    about: Read the current Community information on the official website.

@@ -1,0 +1,44 @@
+name: Community proposal
+description: Propose an improvement for the future MorphCSS Community distribution.
+title: "[Proposal]: "
+labels:
+  - proposal
+body:
+  - type: markdown
+    attributes:
+      value: Describe the problem and desired outcome. Please do not attach private MorphCSS code or third-party material you cannot license.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: What are you trying to achieve, and who benefits?
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Proposed outcome
+      description: Describe the public behavior, documentation, or repository change you would like.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Note any workarounds or alternative approaches.
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Add public references, mockups, or examples if useful.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and proposals.
+          required: true
+        - label: I have not included private, confidential, reverse-engineered, or unlicensed material.
+          required: true
+        - label: I understand that MorphCSS Community uses a proprietary license and is not an open-source project.
+          required: true

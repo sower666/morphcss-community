@@ -1,0 +1,44 @@
+name: Documentation issue
+description: Report unclear, incorrect, or outdated public documentation.
+title: "[Docs]: "
+labels:
+  - documentation
+body:
+  - type: markdown
+    attributes:
+      value: Thank you for helping improve MorphCSS Community documentation. Do not report security vulnerabilities here.
+  - type: textarea
+    id: description
+    attributes:
+      label: What is wrong or unclear?
+      description: Describe the documentation problem and its impact.
+    validations:
+      required: true
+  - type: input
+    id: location
+    attributes:
+      label: Affected URL or file
+      placeholder: https://morphcss.site/docs/ or README.md
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Suggested correction
+      description: Explain the result or wording you expected.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Add screenshots, browser details, or related links if useful.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues for duplicates.
+          required: true
+        - label: This report does not contain a security vulnerability or private information.
+          required: true

@@ -9,14 +9,25 @@ MorphCSS is a context-first adaptive CSS system. It is designed so components ca
 
 ## Planned contents
 
-Future releases may include:
+The first planned candidate, **0.1.0-alpha.0**, is **CSS-only**. Its proposed release package contains:
 
-- production-ready compiled CSS and JavaScript;
-- public documentation and examples;
-- release notes and integrity hashes;
-- only the assets required to use the Community distribution.
+- `morph.community.css` — compiled Community stylesheet;
+- `manifest.json` — package version and SHA-256 integrity information;
+- `LICENSE.md` — the MorphCSS Community License 1.0.
+
+No JavaScript runtime, private source code, internal tooling, or development diagnostics are included. This is a candidate specification, **not an announcement that a downloadable release is available**.
 
 Private commercial source code, unpublished MorphCSS implementations, internal tooling, development diagnostics, and licensed third-party materials are not part of this repository.
+
+## Installation (after a release is published)
+
+Download the official Community release package, verify the files against the SHA-256 values in `manifest.json`, and place `morph.community.css` in your website's public assets directory. Add this tag inside the page's `<head>`:
+
+```html
+<link rel="stylesheet" href="/assets/morph.community.css">
+```
+
+Use documented Community classes such as `m-stack`, `m-grid`, `m-button`, `m-link`, `m-badge`, and `m-card`. No JavaScript initialization is required for the CSS-only edition. Until the first release is published, there is no official downloadable package to install.
 
 ## Links
 

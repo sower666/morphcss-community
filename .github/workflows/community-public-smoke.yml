@@ -1,0 +1,59 @@
+# MorphCSS Community public distribution smoke test
+# Copyright (c) 2026 Jacek Kukulski | Public repository automation
+# Version: 1.0 | License: MorphCSS Community License 1.0
+name: Community public release smoke test
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/community-public-smoke.yml'
+      - 'README.md'
+permissions:
+  contents: read
+jobs:
+  verify-public-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Download official alpha ZIP
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --silent --show-error \
+            'https://github.com/sower666/morphcss-community/releases/download/v0.1.0-alpha.0/MorphCSS-Community-0.1.0-alpha.0.zip' \
+            --output /tmp/community-alpha.zip
+          echo '32925ab9a0c9fc57d38e0c54e20631f63132987b96e340ff558d05c11b49e157  /tmp/community-alpha.zip' | sha256sum --check --status
+      - name: Verify package manifest, allowlist, and per-file SHA-256
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/community-public-test
+          unzip -q /tmp/community-alpha.zip -d /tmp/community-public-test
+          python3 - <<'PY'
+          import hashlib,json,pathlib
+          root=pathlib.Path('/tmp/community-public-test')
+          expected={'LICENSE.md','manifest.json','morph.community.css'}
+          assert {p.name for p in root.iterdir()} == expected, 'Unexpected files'
+          manifest=json.loads((root/'manifest.json').read_text())
+          assert manifest['version']=='0.1.0-alpha.0'
+          assert manifest['format']=='css-only' and manifest['runtimeIncluded'] is False
+          assert {x['file'] for x in manifest['artifacts']} == {'LICENSE.md','morph.community.css'}
+          for artifact in manifest['artifacts']:
+              payload=(root/artifact['file']).read_bytes()
+              assert len(payload)==artifact['bytes']
+              assert hashlib.sha256(payload).hexdigest()==artifact['sha256']
+          css=(root/'morph.community.css').read_text()
+          assert '.m-grid' in css and '.m-button' in css
+          assert '@import' not in css.lower()
+          print('PASS: SHA-256, allowlist, manifest, CSS-only contract')
+          PY
+      - name: Verify stylesheet served via HTTP
+        run: |
+          set -euo pipefail
+          python3 -m http.server 18765 --bind 127.0.0.1 --directory /tmp/community-public-test >/tmp/community-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for i in 1 2 3 4 5; do
+            if curl --fail --silent --show-error http://127.0.0.1:18765/morph.community.css -o /tmp/served-community.css; then break; fi
+            sleep 1
+          done
+          cmp /tmp/community-public-test/morph.community.css /tmp/served-community.css
+          echo 'PASS: public CSS served byte-for-byte over HTTP'

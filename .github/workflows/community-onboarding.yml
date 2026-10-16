@@ -1,0 +1,80 @@
+# MorphCSS Community onboarding QA | Copyright (c) 2026 Jacek Kukulski
+# Workflow tooling only — does not distribute proprietary framework files
+name: Community onboarding QA
+on:
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'examples/community-starter/**'
+      - 'README.md'
+      - 'SUPPORT.md'
+      - '.github/ISSUE_TEMPLATE/bug_report.yml'
+      - '.github/workflows/community-onboarding.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'examples/community-starter/**'
+      - 'README.md'
+      - 'SUPPORT.md'
+      - '.github/ISSUE_TEMPLATE/bug_report.yml'
+      - '.github/workflows/community-onboarding.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit-starter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Download and validate official CSS-only release
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --silent --show-error 'https://github.com/sower666/morphcss-community/releases/download/v0.1.0-alpha.0/MorphCSS-Community-0.1.0-alpha.0.zip' -o /tmp/community.zip
+          echo '32925ab9a0c9fc57d38e0c54e20631f63132987b96e340ff558d05c11b49e157  /tmp/community.zip' | sha256sum --check
+          mkdir -p /tmp/community-onboarding
+          unzip -q /tmp/community.zip morph.community.css -d /tmp/community-onboarding
+          cp examples/community-starter/index.html /tmp/community-onboarding/index.html
+          python3 - <<'PY'
+          import json,re,pathlib,zipfile,hashlib
+          root=pathlib.Path('.')
+          css=(pathlib.Path('/tmp/community-onboarding')/'morph.community.css').read_text()
+          html=(root/'examples/community-starter/index.html').read_text()
+          assert '<link rel="stylesheet" href="./morph.community.css">' in html
+          assert '<script' not in html.lower()
+          for name in set(re.findall(r'(?<![\w-])m-[a-z0-9_-]+',html)):
+              if name.startswith(('m-theme','m-grid','m-card','m-stack','m-center','m-cluster','m-link','m-button','m-badge','m-type','m-pad','m-surface','m-rounded','m-border')):
+                  assert '.'+name in css, f'Unknown CSS class: {name}'
+          for name in ('quickstart','components','theming'):
+              assert (root/'docs'/f'{name}.md').is_file()
+          ids=set(re.findall(r'\bid="([^"]+)"',html))
+          for anchor in re.findall(r'href="#([^"]+)"',html):
+              assert anchor in ids, f'Broken local anchor: {anchor}'
+          assert (root/'.github/ISSUE_TEMPLATE/bug_report.yml').is_file()
+          print('PASS: public stylesheet, documented classes, local links and files')
+          PY
+      - name: Install Playwright browsers
+        run: |
+          mkdir -p tests/audit-env
+          npm --prefix tests/audit-env init -y
+          npm --prefix tests/audit-env install --no-audit --no-fund playwright@1.56.1
+          npx --prefix tests/audit-env playwright install --with-deps chromium firefox webkit
+      - name: Browser test public starter at 5 widths
+        run: |
+          set -euo pipefail
+          python3 -m http.server 18765 --bind 127.0.0.1 --directory /tmp/community-onboarding >/tmp/community-onboarding.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          MORPH_AUDIT_BASE='http://127.0.0.1:18765' node tests/community-cross-browser.mjs
+      - name: Save screenshots and measurements
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: community-onboarding-qa
+          path: audit-results/
+          if-no-files-found: warn
+          retention-days: 14

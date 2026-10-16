@@ -29,6 +29,16 @@ Download the official Community release package, verify the files against the SH
 
 Use documented Community classes such as `m-stack`, `m-grid`, `m-button`, `m-link`, `m-badge`, and `m-card`. No JavaScript initialization is required for the CSS-only edition. For direct download, use [MorphCSS Community v0.1.0-alpha.0 ZIP](https://github.com/sower666/morphcss-community/releases/download/v0.1.0-alpha.0/MorphCSS-Community-0.1.0-alpha.0.zip). The release asset SHA-256 is `32925ab9a0c9fc57d38e0c54e20631f63132987b96e340ff558d05c11b49e157`. This alpha is not a stable release.
 
+## Start using Community
+
+- [Quick start and ZIP integrity verification](docs/quickstart.md)
+- [Published CSS components and layout primitives](docs/components.md)
+- [Theme tokens and dark-mode behavior](docs/theming.md)
+- [Standalone HTML example](examples/community-starter/index.html) — copy `morph.community.css` from the official release beside `index.html` to run it.
+- [Report a reproducible alpha bug](https://github.com/sower666/morphcss-community/issues/new/choose)
+
+The public starter intentionally references the official release CSS **without committing a duplicate framework distribution to the repository**.
+
 ## Links
 
 - [MorphCSS website](https://morphcss.site/)

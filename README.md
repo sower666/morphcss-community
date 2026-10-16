@@ -40,7 +40,7 @@ Use documented Community classes such as `m-stack`, `m-grid`, `m-button`, `m-lin
 
 Files and releases are licensed only when they explicitly state that the [MorphCSS Community License 1.0](LICENSE.md) applies.
 
-The planned Community license permits free personal, internal, commercial, and client use as part of a larger website, application, or product. It does not permit standalone redistribution, resale, rebranding, or distribution of MorphCSS as a competing framework, library, component kit, template, or design system.
+The MorphCSS Community License 1.0 permits free personal, internal, commercial, and client use as part of a larger website, application, or product. It does not permit standalone redistribution, resale, rebranding, or distribution of MorphCSS as a competing framework, library, component kit, template, or design system.
 
 MorphCSS Community is proprietary software and is **not open source under the Open Source Definition**. This repository does not grant rights to unpublished code, private MorphCSS releases, or other MorphCSS materials.
 

@@ -3,19 +3,23 @@
 **The official public home of MorphCSS Community.**
 
 > [!IMPORTANT]
-> MorphCSS Community **v0.1.0-alpha.0** is published as a **pre-release**. Download the CSS-only distribution from [GitHub Releases](https://github.com/sower666/morphcss-community/releases/tag/v0.1.0-alpha.0).
+> MorphCSS Community **v0.1.0-alpha.1** is published as a **pre-release**. Download the CSS-only distribution from [GitHub Releases](https://github.com/sower666/morphcss-community/releases/tag/v0.1.0-alpha.1).
 
 MorphCSS is a context-first adaptive CSS system. It is designed so components can respond to the space available to them while keeping their public contract predictable and focused.
 
+## What's new in alpha.1
+
+The alpha.1 update adds basic accessible form controls (`input`, `select`, `textarea`, field labels, help/error messaging) using `m-form`, `m-field` and `m-control`. It removes demo-only and Full-only CSS selectors from the distribution and uses a system-first sans-serif font stack without downloading fonts. No JavaScript runtime is included. See [the form reference](docs/components.md#forms).
+
 ## Release contents
 
-The published **v0.1.0-alpha.0** pre-release is **CSS-only**. Its ZIP contains:
+The published **v0.1.0-alpha.1** pre-release is **CSS-only**. Its ZIP contains:
 
 - `morph.community.css` — compiled Community stylesheet;
 - `manifest.json` — package version and SHA-256 integrity information;
 - `LICENSE.md` — the MorphCSS Community License 1.0.
 
-No JavaScript runtime, private source code, internal tooling, or development diagnostics are included. The downloadable pre-release is available on [GitHub Releases](https://github.com/sower666/morphcss-community/releases/tag/v0.1.0-alpha.0).
+No JavaScript runtime, private source code, internal tooling, or development diagnostics are included. The downloadable pre-release is available on [GitHub Releases](https://github.com/sower666/morphcss-community/releases/tag/v0.1.0-alpha.1).
 
 Private commercial source code, unpublished MorphCSS implementations, internal tooling, development diagnostics, and licensed third-party materials are not part of this repository.
 
@@ -27,7 +31,7 @@ Download the official Community release package, verify the files against the SH
 <link rel="stylesheet" href="/assets/morph.community.css">
 ```
 
-Use documented Community classes such as `m-stack`, `m-grid`, `m-button`, `m-link`, `m-badge`, and `m-card`. No JavaScript initialization is required for the CSS-only edition. For direct download, use [MorphCSS Community v0.1.0-alpha.0 ZIP](https://github.com/sower666/morphcss-community/releases/download/v0.1.0-alpha.0/MorphCSS-Community-0.1.0-alpha.0.zip). The release asset SHA-256 is `32925ab9a0c9fc57d38e0c54e20631f63132987b96e340ff558d05c11b49e157`. This alpha is not a stable release.
+Use documented Community classes such as `m-stack`, `m-grid`, `m-button`, `m-link`, `m-badge`, `m-card`, `m-form`, `m-field`, and `m-control`. No JavaScript initialization is required for the CSS-only edition. For direct download, use [MorphCSS Community v0.1.0-alpha.1 ZIP](https://github.com/sower666/morphcss-community/releases/download/v0.1.0-alpha.1/MorphCSS-Community-0.1.0-alpha.1.zip). The release asset SHA-256 is `32b3011791df651e343eeb619562553afef419a96decb3c705414d65c47d9101`. This alpha is not a stable release.
 
 ## Start using Community
 

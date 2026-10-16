@@ -1,6 +1,6 @@
-# Theming — MorphCSS Community v0.1.0-alpha.0
+# Theming — MorphCSS Community v0.1.0-alpha.1
 
-This release contains CSS theme tokens and **no JavaScript theme controller**.
+This release contains CSS theme tokens and **no JavaScript theme controller**. The default font stack is system UI without loading Inter or an external font. To use Inter, self-host it in your application and override `--m-font-sans` in `@layer app`.
 
 ## Light and dark
 

@@ -19,9 +19,9 @@ jobs:
         run: |
           set -euo pipefail
           curl --fail --location --retry 3 --silent --show-error \
-            'https://github.com/sower666/morphcss-community/releases/download/v0.1.0-alpha.0/MorphCSS-Community-0.1.0-alpha.0.zip' \
+            'https://github.com/sower666/morphcss-community/releases/download/v0.1.0-alpha.1/MorphCSS-Community-0.1.0-alpha.1.zip' \
             --output /tmp/community-alpha.zip
-          echo '32925ab9a0c9fc57d38e0c54e20631f63132987b96e340ff558d05c11b49e157  /tmp/community-alpha.zip' | sha256sum --check --status
+          echo '32b3011791df651e343eeb619562553afef419a96decb3c705414d65c47d9101  /tmp/community-alpha.zip' | sha256sum --check --status
       - name: Verify package manifest, allowlist, and per-file SHA-256
         run: |
           set -euo pipefail
@@ -33,7 +33,7 @@ jobs:
           expected={'LICENSE.md','manifest.json','morph.community.css'}
           assert {p.name for p in root.iterdir()} == expected, 'Unexpected files'
           manifest=json.loads((root/'manifest.json').read_text())
-          assert manifest['version']=='0.1.0-alpha.0'
+          assert manifest['version']=='0.1.0-alpha.1'
           assert manifest['format']=='css-only' and manifest['runtimeIncluded'] is False
           assert {x['file'] for x in manifest['artifacts']} == {'LICENSE.md','morph.community.css'}
           for artifact in manifest['artifacts']:
@@ -42,6 +42,8 @@ jobs:
               assert hashlib.sha256(payload).hexdigest()==artifact['sha256']
           css=(root/'morph.community.css').read_text()
           assert '.m-grid' in css and '.m-button' in css
+          assert '.m-control' in css and '.m-field' in css and '.m-form' in css
+          assert '.demo-box' not in css and '.m-nav__drawer' not in css
           assert '@import' not in css.lower()
           print('PASS: SHA-256, allowlist, manifest, CSS-only contract')
           PY

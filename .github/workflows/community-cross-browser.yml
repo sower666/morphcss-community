@@ -1,0 +1,92 @@
+# MorphCSS Community independent browser and docs audit
+# Copyright (c) 2026 Jacek Kukulski | Tooling, excluded from distribution
+name: Community cross-browser and documentation audit
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tests/community-cross-browser.mjs'
+      - 'tests/community-audit.html'
+      - '.github/workflows/community-cross-browser.yml'
+permissions:
+  contents: read
+jobs:
+  cross-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Download and verify public release
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --silent --show-error 'https://github.com/sower666/morphcss-community/releases/download/v0.1.0-alpha.0/MorphCSS-Community-0.1.0-alpha.0.zip' -o /tmp/community.zip
+          echo '32925ab9a0c9fc57d38e0c54e20631f63132987b96e340ff558d05c11b49e157  /tmp/community.zip' | sha256sum --check
+          mkdir -p /tmp/community-audit
+          unzip -q /tmp/community.zip morph.community.css -d /tmp/community-audit
+          cp tests/community-audit.html /tmp/community-audit/index.html
+      - name: Install isolated test dependencies
+        run: |
+          npm --prefix tests/audit-env init -y
+          npm --prefix tests/audit-env install --no-audit --no-fund playwright@1.56.1
+          npx --prefix tests/audit-env playwright install --with-deps chromium firefox webkit
+      - name: Run browsers against HTTP server
+        run: |
+          set -euo pipefail
+          python3 -m http.server 18765 --bind 127.0.0.1 --directory /tmp/community-audit >/tmp/community-audit-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          NODE_PATH="$PWD/tests/audit-env/node_modules" node tests/community-cross-browser.mjs
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: community-cross-browser-audit
+          path: audit-results/
+          if-no-files-found: warn
+          retention-days: 14
+  lighthouse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download validated public release
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --silent --show-error 'https://github.com/sower666/morphcss-community/releases/download/v0.1.0-alpha.0/MorphCSS-Community-0.1.0-alpha.0.zip' -o /tmp/community.zip
+          echo '32925ab9a0c9fc57d38e0c54e20631f63132987b96e340ff558d05c11b49e157  /tmp/community.zip' | sha256sum --check
+          mkdir -p /tmp/community-audit
+          unzip -q /tmp/community.zip morph.community.css -d /tmp/community-audit
+          cp tests/community-audit.html /tmp/community-audit/index.html
+      - name: Run Lighthouse on local HTTP demo
+        run: |
+          set -euo pipefail
+          python3 -m http.server 18765 --bind 127.0.0.1 --directory /tmp/community-audit >/tmp/community-lighthouse-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          mkdir -p audit-results
+          npx --yes lighthouse@12.8.2 'http://127.0.0.1:18765/index.html' --chrome-flags='--headless --no-sandbox' --output=json --output-path=audit-results/lighthouse.json --quiet
+          node -e "const a=require('./audit-results/lighthouse.json'); console.log(JSON.stringify(Object.fromEntries(Object.entries(a.categories).map(([k,v])=>[k,v.score])),null,2));"
+      - name: Upload Lighthouse audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: community-lighthouse-audit
+          path: audit-results/
+          if-no-files-found: warn
+          retention-days: 14
+  docs-links:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check public documentation URLs
+        run: |
+          set -euo pipefail
+          for route in / /docs/ /examples/ /community/; do
+            url="https://morphcss.site$route"
+            status=$(curl --location --silent --show-error --max-time 20 -o /dev/null -w '%{http_code}' "$url" || true)
+            echo "$url => $status"
+            if [ "$status" -lt 200 ] || [ "$status" -ge 400 ]; then exit 1; fi
+          done

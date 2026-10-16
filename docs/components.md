@@ -1,4 +1,4 @@
-# CSS component reference — v0.1.0-alpha.0
+# CSS component reference — v0.1.0-alpha.1
 
 These are **selectors shipped in the published Community ZIP**, not a catalog of MorphCSS Full features. Community is CSS-only; it does not ship a runtime or behavior controllers.
 
@@ -70,3 +70,25 @@ Use `.m-card` with `.m-card__frame`. Optional elements include `.m-card__media`,
 Published utility examples: `.m-pad`, `.m-margin`, `.m-surface-raised`, `.m-border`, `.m-rounded`, `.m-shadow`, `.m-text-center`, `.m-text-justify`, `.m-clamp-2`, `.m-truncate`.
 
 Not bundled: a JavaScript controller, dynamic theme switcher, icons pack, modal/carousel behavior, navigation controller or commercial Full components. See the [starter demo](../examples/community-starter/index.html) and [theming guide](theming.md).
+
+## Forms
+
+Alpha.1 includes the CSS-only form styles `.m-form`, `.m-field`, `.m-field__label`, `.m-field__help`, `.m-field__error` and `.m-control`. Apply `.m-control` explicitly to native `input`, `select` and `textarea` elements. Associate labels with their controls via `for` and `id`.
+
+```html
+<form class="m-form" action="/contact" method="post">
+  <div class="m-field">
+    <label class="m-field__label" for="email">Email</label>
+    <input class="m-control" id="email" type="email" name="email" required>
+    <p class="m-field__help">We will reply to this address.</p>
+  </div>
+  <div class="m-field" data-m-state="error">
+    <label for="message" class="m-field__label">Message</label>
+    <textarea class="m-control" id="message" name="message" aria-invalid="true" aria-describedby="message-error"></textarea>
+    <p id="message-error" class="m-field__error">Example validation message.</p>
+  </div>
+  <button class="m-button" data-m-intent="primary" type="submit">Send</button>
+</form>
+```
+
+`.m-control` supports `:focus-visible`, `:disabled`, `[readonly]`, `[aria-invalid="true"]`, placeholder styling, reduced motion and forced colors. This CSS has no validation logic or form submission backend. Use appropriate native semantics and server-side validation.

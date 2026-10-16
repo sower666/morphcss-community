@@ -1,6 +1,6 @@
 # MorphCSS Community support
 
-The CSS-only alpha [v0.1.0-alpha.0](https://github.com/sower666/morphcss-community/releases/tag/v0.1.0-alpha.0) is published. The proprietary-licensed edition is a pre-release, not MorphCSS Full.
+The CSS-only alpha [v0.1.0-alpha.1](https://github.com/sower666/morphcss-community/releases/tag/v0.1.0-alpha.1) is published. The proprietary-licensed edition is a pre-release, not MorphCSS Full.
 
 ## Start here
 

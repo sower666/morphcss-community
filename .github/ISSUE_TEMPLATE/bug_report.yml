@@ -1,0 +1,59 @@
+name: Community alpha bug
+description: Report a reproducible issue in a published Community release.
+title: "[Alpha bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: "Report public-release issues only. Do not disclose security vulnerabilities or private source code; follow SECURITY.md."
+  - type: input
+    id: version
+    attributes:
+      label: Release version
+      placeholder: v0.1.0-alpha.0
+    validations:
+      required: true
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser engine
+      options:
+        - Chromium
+        - Firefox
+        - WebKit / Safari
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Browser version, OS, viewport width
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: checkboxes
+    id: verification
+    attributes:
+      label: Confirmation
+      options:
+        - label: I tested the official release and searched existing issues.
+          required: true
+        - label: My report contains no secrets, private code or security vulnerabilities.
+          required: true

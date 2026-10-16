@@ -1,80 +1,139 @@
-# MorphCSS website post-deployment verification
+# MorphCSS public site post-deployment verification — public metadata/hashes only
 # Copyright (c) 2026 Jacek Kukulski
-# QA-only metadata; no private MorphCSS Full source or license runtime.
 name: MorphCSS website post-deploy audit
 on:
   push:
-    branches:
-      - 'qa/morphcss-site-postdeploy-2026-10-16'
-    paths:
-      - '.github/workflows/morphcss-site-postdeploy.yml'
+    branches: ['qa/morphcss-site-postdeploy-2026-10-16']
+    paths: ['.github/workflows/morphcss-site-postdeploy.yml']
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
   audit-production:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 10
     steps:
-      - name: Check live pages against approved deployment
+      - name: Verify live alpha.1 pages, SEO and static assets
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p audit
           python3 - <<'PY'
-          import hashlib, json, time, urllib.request, urllib.error, re
-          base = "https://morphcss.site"
-          expected = {
-            "/": ("967fc5f0adbb8de3515159bd11d39eea3e5a2205d8c6d698e778355e842b8de7", ["v0.1.0-alpha.0", "/community/"]),
-            "/community/": ("0d45206dc1475a5b9ff25fe135549b196140e5d026a71133c5be2603d6e24552", ["v0.1.0-alpha.0", "32925ab9a0c9fc57d38e0c54e20631f63132987b96e340ff558d05c11b49e157", "releases/download"]),
-            "/docs/": ("730f3786c2a87a400c1e63d38fbbe011b43a93c4470920efa9fee5adc7692a02", ["v0.1.0-alpha.0", "morph.community.css", "releases/download"]),
-            "/license/": ("6a721ffb35d9fe0cdc3b0dccc7f3856d22a31f7d8467de6e78031fc95f662d8c", ["v0.1.0-alpha.0", "MorphCSS Community License 1.0"]),
-            "/assets/site.881e42f865188d07.css": ("881e42f865188d0768cb149047066fd54d39f870dbdd7966a1110e21ffacaf08", []),
-            "/assets/site.e4e483b0d3d75944.js": ("e4e483b0d3d7594448f6c47ff8d3daa465fb0cb0cbf2ac3c400892b7efb201cf", []),
+          import hashlib, json, time, urllib.request, urllib.error
+          from datetime import datetime, timezone
+          from html.parser import HTMLParser
+
+          ROOT='https://morphcss.site'
+          RELEASE='v0.1.0-alpha.1'
+          RELEASE_URL='https://github.com/sower666/morphcss-community/releases/download/v0.1.0-alpha.1/MorphCSS-Community-0.1.0-alpha.1.zip'
+          RELEASE_SHA='32b3011791df651e343eeb619562553afef419a96decb3c705414d65c47d9101'
+          OG='/assets/social-card.230e2b83e0b4fd7a.png'
+          PAGES={
+            '/':('4bf84c9f923dd9259050024d8e55e6e91fcb699e32d101b51a7cdc6cedc981c7',[RELEASE,'/community/']),
+            '/community/':('dc27c8a49e17941472753ffe6d99196077b123f2c8074f63db89bed9e7a5e40f',[RELEASE,RELEASE_URL,RELEASE_SHA,'m-control']),
+            '/docs/':('4e2312789ebe530f0f21770515d229ac695839b64ad270d91f82820093623ef5',[RELEASE,'m-control','m-field',RELEASE_SHA]),
+            '/license/':('6796d3274bef40c2fbd8127b9bca5bb255f687daade1746a3e00c4d7275fdcdb',[RELEASE,'MorphCSS Community License 1.0'])
           }
+          ASSETS={
+            '/assets/site.881e42f865188d07.css':'881e42f865188d0768cb149047066fd54d39f870dbdd7966a1110e21ffacaf08',
+            '/assets/site.e4e483b0d3d75944.js':'e4e483b0d3d7594448f6c47ff8d3daa465fb0cb0cbf2ac3c400892b7efb201cf',
+            OG:'230e2b83e0b4fd7a8f58640d14fe5c5e3504f60a57aa5f365ef2510e96b1e78e',
+          }
+          OTHER=['/robots.txt','/sitemap.xml','/examples/','/reference/catalog/','/reference/content-portal/','/reference/dashboard/']
+          class HeadParser(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.metas={}
+                  self.links=[]
+                  self.jsonld=[]
+                  self.collect=False
+                  self.payload=''
+                  self.title=''
+                  self.in_title=False
+              def handle_starttag(self,tag,attrs):
+                  a=dict(attrs)
+                  if tag=='meta':
+                      self.metas[a.get('name') or a.get('property')]=a.get('content','')
+                  if tag=='link': self.links.append(a)
+                  if tag=='title': self.in_title=True
+                  if tag=='script' and a.get('type')=='application/ld+json':
+                      self.collect=True
+                      self.payload=''
+              def handle_data(self,data):
+                  if self.collect: self.payload+=data
+                  if self.in_title: self.title+=data
+              def handle_endtag(self,tag):
+                  if tag=='title': self.in_title=False
+                  if tag=='script' and self.collect:
+                      self.jsonld.append(json.loads(self.payload))
+                      self.collect=False
+
+          def fetch(url):
+              req=urllib.request.Request(url,headers={'User-Agent':'MorphCSS-postdeploy-QA/1.1','Accept-Encoding':'identity'})
+              with urllib.request.urlopen(req,timeout=22) as r:
+                  return r.status,r.url,dict(r.headers.items()),r.read(5000000)
           results=[]
-          for path,(digest,markers) in expected.items():
-            record={"url":base+path, "path":path}
-            for attempt in range(3):
-              try:
-                req=urllib.request.Request(base+path,headers={"User-Agent":"MorphCSS-postdeploy-QA/1.0","Accept":"text/html,*/*"})
-                with urllib.request.urlopen(req,timeout=18) as resp:
-                  data=resp.read(2500000)
-                  record.update(status=resp.status, final_url=resp.url,
-                    content_type=resp.headers.get("Content-Type"), cache_control=resp.headers.get("Cache-Control"),
-                    csp=bool(resp.headers.get("Content-Security-Policy")), hsts=bool(resp.headers.get("Strict-Transport-Security")),
-                    bytes=len(data), sha256=hashlib.sha256(data).hexdigest())
-                  body=data.decode("utf-8",errors="replace")
-                  record["missing_markers"]=[x for x in markers if x not in body]
-                  record["digest_match"]=record["sha256"]==digest
-                  record["success"]=resp.status==200 and not record["missing_markers"] and record["digest_match"]
-                  break
-              except Exception as e:
-                record["error"]=str(e)
-                if attempt<2: time.sleep(2)
-            if "success" not in record: record["success"]=False
-            results.append(record)
-            print(("PASS" if record["success"] else "FAIL"), record["url"], "http=",record.get("status"),"digest=",record.get("digest_match"),"error=",record.get("error",""))
-          for path in ["/robots.txt","/sitemap.xml"]:
-            record={"url":base+path,"path":path}
-            try:
-              with urllib.request.urlopen(urllib.request.Request(base+path,headers={"User-Agent":"MorphCSS-postdeploy-QA/1.0"}),timeout=18) as resp:
-                record["status"]=resp.status
-                record["bytes"]=len(resp.read(1000000))
-                record["success"]=resp.status==200 and record["bytes"]>0
-            except Exception as e: record.update(success=False,error=str(e))
-            results.append(record)
-            print(("PASS" if record["success"] else "FAIL"),record["url"])
-          report={"deployment":"site.community-2026-10-16","checked_at_utc":__import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat(),"results":results,"all_pass":all(x["success"] for x in results)}
-          open("audit/site-postdeploy.json","w").write(json.dumps(report,indent=2)+"\n")
-          print(json.dumps({"all_pass":report["all_pass"],"checks":len(results),"failed":[x["path"] for x in results if not x["success"]]},indent=2))
-          if not report["all_pass"]: raise SystemExit(1)
+          for path in list(PAGES)+list(ASSETS)+OTHER:
+              record={'path':path,'url':ROOT+path}
+              for attempt in range(3):
+                  try:
+                      status,final,headers,body=fetch(ROOT+path)
+                      record.update(http_status=status,final_url=final,bytes=len(body),
+                                    sha256=hashlib.sha256(body).hexdigest(),
+                                    csp_present=bool(headers.get('Content-Security-Policy')),
+                                    hsts_present=bool(headers.get('Strict-Transport-Security')),
+                                    cache_control=headers.get('Cache-Control',''))
+                      problems=[]
+                      if status!=200: problems.append('HTTP non-200')
+                      if not final.startswith(ROOT): problems.append('unexpected redirect')
+                      if path in PAGES:
+                          expected,markers=PAGES[path]
+                          if record['sha256']!=expected: problems.append('wrong HTML SHA-256')
+                          html=body.decode('utf-8')
+                          if 'v0.1.0-alpha.0' in html: problems.append('obsolete alpha.0 version')
+                          for marker in markers:
+                              if marker not in html: problems.append('missing '+marker[:70])
+                          h=HeadParser()
+                          h.feed(html)
+                          if not h.title.strip(): problems.append('missing title')
+                          if not h.metas.get('description'): problems.append('missing description')
+                          if not h.metas.get('og:title'): problems.append('missing og:title')
+                          if h.metas.get('og:image')!=ROOT+OG: problems.append('wrong og:image')
+                          if h.metas.get('twitter:card')!='summary_large_image': problems.append('wrong Twitter card')
+                          if h.metas.get('robots','').startswith('noindex'): problems.append('unexpected noindex')
+                          if not any(x.get('rel')=='canonical' and x.get('href')==ROOT+path for x in h.links): problems.append('wrong canonical')
+                          if not h.jsonld: problems.append('missing JSON-LD')
+                          record['jsonld_blocks']=len(h.jsonld)
+                          if not record['csp_present']: problems.append('missing CSP')
+                          if not record['hsts_present']: problems.append('missing HSTS')
+                      if path in ASSETS and record['sha256']!=ASSETS[path]: problems.append('wrong asset SHA-256')
+                      if not body: problems.append('empty response')
+                      record['problems']=problems
+                      record['success']=not problems
+                      break
+                  except Exception as exc:
+                      record['error']=str(exc)
+                      if attempt<2: time.sleep(2)
+              if 'success' not in record: record['success']=False
+              print(('PASS' if record['success'] else 'FAIL'),path,
+                    record.get('http_status','n/a'),record.get('problems',record.get('error','')))
+              results.append(record)
+          report={'deployment':'site.community-alpha1-2026-10-16.1',
+                  'checked_at_utc':datetime.now(timezone.utc).isoformat(),
+                  'results':results,
+                  'checks_passed':sum(r['success'] for r in results),
+                  'checks_total':len(results),
+                  'all_pass':all(r['success'] for r in results)}
+          with open('audit/site-postdeploy-alpha1.json','w') as out:
+              json.dump(report,out,indent=2)
+          print('RESULT',report['checks_passed'],'/',report['checks_total'],'PASS')
+          if not report['all_pass']: raise SystemExit(1)
           PY
       - name: Upload verification report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: morphcss-site-postdeploy-report
-          path: audit/site-postdeploy.json
-          if-no-files-found: warn
+          name: morphcss-site-alpha1-postdeploy-report
+          path: audit/site-postdeploy-alpha1.json
+          if-no-files-found: error
           retention-days: 14

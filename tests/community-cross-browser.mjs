@@ -3,7 +3,7 @@
  */
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { chromium, firefox, webkit } from 'playwright';
+import { chromium, firefox, webkit } from './audit-env/node_modules/playwright/index.mjs';
 const base = process.env.MORPH_AUDIT_BASE || 'http://127.0.0.1:18765';
 const widths = [320, 390, 768, 1280, 1920];
 const out = 'audit-results';

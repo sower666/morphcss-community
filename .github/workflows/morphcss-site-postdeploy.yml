@@ -1,0 +1,80 @@
+# MorphCSS website post-deployment verification
+# Copyright (c) 2026 Jacek Kukulski
+# QA-only metadata; no private MorphCSS Full source or license runtime.
+name: MorphCSS website post-deploy audit
+on:
+  push:
+    branches:
+      - 'qa/morphcss-site-postdeploy-2026-10-16'
+    paths:
+      - '.github/workflows/morphcss-site-postdeploy.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit-production:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Check live pages against approved deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p audit
+          python3 - <<'PY'
+          import hashlib, json, time, urllib.request, urllib.error, re
+          base = "https://morphcss.site"
+          expected = {
+            "/": ("967fc5f0adbb8de3515159bd11d39eea3e5a2205d8c6d698e778355e842b8de7", ["v0.1.0-alpha.0", "/community/"]),
+            "/community/": ("0d45206dc1475a5b9ff25fe135549b196140e5d026a71133c5be2603d6e24552", ["v0.1.0-alpha.0", "32925ab9a0c9fc57d38e0c54e20631f63132987b96e340ff558d05c11b49e157", "releases/download"]),
+            "/docs/": ("730f3786c2a87a400c1e63d38fbbe011b43a93c4470920efa9fee5adc7692a02", ["v0.1.0-alpha.0", "morph.community.css", "releases/download"]),
+            "/license/": ("6a721ffb35d9fe0cdc3b0dccc7f3856d22a31f7d8467de6e78031fc95f662d8c", ["v0.1.0-alpha.0", "MorphCSS Community License 1.0"]),
+            "/assets/site.881e42f865188d07.css": ("881e42f865188d0768cb149047066fd54d39f870dbdd7966a1110e21ffacaf08", []),
+            "/assets/site.e4e483b0d3d75944.js": ("e4e483b0d3d7594448f6c47ff8d3daa465fb0cb0cbf2ac3c400892b7efb201cf", []),
+          }
+          results=[]
+          for path,(digest,markers) in expected.items():
+            record={"url":base+path, "path":path}
+            for attempt in range(3):
+              try:
+                req=urllib.request.Request(base+path,headers={"User-Agent":"MorphCSS-postdeploy-QA/1.0","Accept":"text/html,*/*"})
+                with urllib.request.urlopen(req,timeout=18) as resp:
+                  data=resp.read(2500000)
+                  record.update(status=resp.status, final_url=resp.url,
+                    content_type=resp.headers.get("Content-Type"), cache_control=resp.headers.get("Cache-Control"),
+                    csp=bool(resp.headers.get("Content-Security-Policy")), hsts=bool(resp.headers.get("Strict-Transport-Security")),
+                    bytes=len(data), sha256=hashlib.sha256(data).hexdigest())
+                  body=data.decode("utf-8",errors="replace")
+                  record["missing_markers"]=[x for x in markers if x not in body]
+                  record["digest_match"]=record["sha256"]==digest
+                  record["success"]=resp.status==200 and not record["missing_markers"] and record["digest_match"]
+                  break
+              except Exception as e:
+                record["error"]=str(e)
+                if attempt<2: time.sleep(2)
+            if "success" not in record: record["success"]=False
+            results.append(record)
+            print(("PASS" if record["success"] else "FAIL"), record["url"], "http=",record.get("status"),"digest=",record.get("digest_match"),"error=",record.get("error",""))
+          for path in ["/robots.txt","/sitemap.xml"]:
+            record={"url":base+path,"path":path}
+            try:
+              with urllib.request.urlopen(urllib.request.Request(base+path,headers={"User-Agent":"MorphCSS-postdeploy-QA/1.0"}),timeout=18) as resp:
+                record["status"]=resp.status
+                record["bytes"]=len(resp.read(1000000))
+                record["success"]=resp.status==200 and record["bytes"]>0
+            except Exception as e: record.update(success=False,error=str(e))
+            results.append(record)
+            print(("PASS" if record["success"] else "FAIL"),record["url"])
+          report={"deployment":"site.community-2026-10-16","checked_at_utc":__import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat(),"results":results,"all_pass":all(x["success"] for x in results)}
+          open("audit/site-postdeploy.json","w").write(json.dumps(report,indent=2)+"\n")
+          print(json.dumps({"all_pass":report["all_pass"],"checks":len(results),"failed":[x["path"] for x in results if not x["success"]]},indent=2))
+          if not report["all_pass"]: raise SystemExit(1)
+          PY
+      - name: Upload verification report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: morphcss-site-postdeploy-report
+          path: audit/site-postdeploy.json
+          if-no-files-found: warn
+          retention-days: 14

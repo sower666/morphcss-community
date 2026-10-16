@@ -34,8 +34,8 @@ jobs:
       - name: Download and validate official CSS-only release
         run: |
           set -euo pipefail
-          curl --fail --location --retry 3 --silent --show-error 'https://github.com/sower666/morphcss-community/releases/download/v0.1.0-alpha.0/MorphCSS-Community-0.1.0-alpha.0.zip' -o /tmp/community.zip
-          echo '32925ab9a0c9fc57d38e0c54e20631f63132987b96e340ff558d05c11b49e157  /tmp/community.zip' | sha256sum --check
+          curl --fail --location --retry 3 --silent --show-error 'https://github.com/sower666/morphcss-community/releases/download/v0.1.0-alpha.1/MorphCSS-Community-0.1.0-alpha.1.zip' -o /tmp/community.zip
+          echo '32b3011791df651e343eeb619562553afef419a96decb3c705414d65c47d9101  /tmp/community.zip' | sha256sum --check
           mkdir -p /tmp/community-onboarding
           unzip -q /tmp/community.zip morph.community.css -d /tmp/community-onboarding
           cp examples/community-starter/index.html /tmp/community-onboarding/index.html
@@ -54,6 +54,8 @@ jobs:
           ids=set(re.findall(r'\bid="([^"]+)"',html))
           for anchor in re.findall(r'href="#([^"]+)"',html):
               assert anchor in ids, f'Broken local anchor: {anchor}'
+          assert '.m-control' in css and '.m-field' in css and '.m-form' in css
+          assert 'class="m-control"' in html and '<textarea' in html
           assert (root/'.github/ISSUE_TEMPLATE/bug_report.yml').is_file()
           print('PASS: public stylesheet, documented classes, local links and files')
           PY
